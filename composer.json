@@ -1,5 +1,5 @@
 {
-	"name": "arsonik/IMDb-client",
+	"name": "arsonik/imdb-client",
 	"description": "IMDb Scrapper.",
 	"keywords": [ "imdb", "movie" ],
 	"require": {
@@ -13,7 +13,7 @@
 	"repositories": [
 		{
 			"type": "vcs",
-			"url": "https://github.com/arsonik/IMDb-client"
+			"url": "https://github.com/arsonik/imdb-client"
 		}
 	]
 }
