@@ -1,0 +1,19 @@
+{
+	"name": "arsonik/IMDb-client",
+	"description": "IMDb Scrapper.",
+	"keywords": [ "imdb", "movie" ],
+	"require": {
+		"electrolinux/phpquery": "dev-master"
+	},
+	"autoload": {
+		"psr-0": {
+			"IMDb": "src/"
+		}
+	},
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/arsonik/IMDb-client"
+		}
+	]
+}
