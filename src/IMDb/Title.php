@@ -234,11 +234,7 @@ class Title implements \JsonSerializable {
 	}
 
 	/**
-	 * (PHP 5 &gt;= 5.4.0)<br/>
-	 * Specify data which should be serialized to JSON
-	 * @link http://php.net/manual/en/jsonserializable.jsonserialize.php
-	 * @return mixed data which can be serialized by <b>json_encode</b>,
-	 * which is a value of any type other than a resource.
+	 * @return array
 	 */
 	public function jsonSerialize()
 	{
@@ -252,7 +248,7 @@ class Title implements \JsonSerializable {
 			'genres' => $this->_genres,
 			'cast' => $this->_cast,
 			'directors' => $this->_directors,
-			'length' => $this->_length->format('%h:%i:%s'),
+			'length' => $this->_length->format('%i'),
 		];
 	}
 }
