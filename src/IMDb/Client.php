@@ -19,6 +19,12 @@ class Client {
 
 	protected $_timeout = 4;
 
+	protected $_cacheResults;
+
+	public function __construct($cacheResults = true){
+		$this->_cacheResults = (bool) $cacheResults;
+	}
+
 	/**
 	 * @param string $title
 	 * @return array
@@ -112,6 +118,10 @@ class Client {
 	 */
 	protected function _getContent($uri, $attempt = 1)
 	{
+		if($this->_cacheResults){
+			$cacheFile = '/tmp/'.__METHOD__.'-'.md5($uri);
+			if(is_file($cacheFile)) return include $cacheFile;
+		}
 		$ch = curl_init();
 		curl_setopt_array($ch, [
 			CURLOPT_URL => $uri,
@@ -129,6 +139,8 @@ class Client {
 
 			throw new Exception('['.$errno.'] ' . $error);
 		}
+		elseif($this->_cacheResults)
+			file_put_contents($cacheFile, '<?php return ' . var_export($result, true) . ';');
 		curl_close($ch);
 		if(!$result)
 			throw new Exception('Invalid return curl_getinfo = ' . var_export(curl_getinfo($ch), true));
