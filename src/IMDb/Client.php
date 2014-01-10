@@ -1,44 +1,46 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: florian
- * Date: 09/01/14
- * Time: 14:47
- */
-
 namespace IMDb;
 
 use IMDb\Title;
 
 class Client {
 
-	/**
-	 * <div class="inputs">
-
-	<table>
-	<tbody><tr><td><input id="title_type-1" type="checkbox" name="title_type" value="feature"> <label for="title_type-1">Feature Film</label></td>
-	<td><input id="title_type-2" type="checkbox" name="title_type" value="tv_movie"> <label for="title_type-2">TV Movie</label></td>
-	<td><input id="title_type-3" type="checkbox" name="title_type" value="tv_series"> <label for="title_type-3">TV Series</label></td>
-	<td><input id="title_type-4" type="checkbox" name="title_type" value="tv_episode"> <label for="title_type-4">TV Episode</label></td>
-	</tr>
-	<tr><td><input id="title_type-5" type="checkbox" name="title_type" value="tv_special"> <label for="title_type-5">TV Special</label></td>
-	<td><input id="title_type-6" type="checkbox" name="title_type" value="mini_series"> <label for="title_type-6">Mini-Series</label></td>
-	<td><input id="title_type-7" type="checkbox" name="title_type" value="documentary"> <label for="title_type-7">Documentary</label></td>
-	<td><input id="title_type-8" type="checkbox" name="title_type" value="game"> <label for="title_type-8">Video Game</label></td>
-	</tr>
-	<tr><td><input id="title_type-9" type="checkbox" name="title_type" value="short"> <label for="title_type-9">Short Film</label></td>
-	<td><input id="title_type-10" type="checkbox" name="title_type" value="video"> <label for="title_type-10">Video</label></td>
-	<td><input id="title_type-11" type="checkbox" name="title_type" value="unknown"> <label for="title_type-11">Unknown Work</label></td>
-	</tr></tbody></table>
-	</div>
-	 */
-	const MOVIE = 'feature';
-	const TV_SHOW = 'tv_series';
-	const TV_EPISODE= 'tv_episode';
+	const TYPE_MOVIE = 'feature';
+	const TYPE_TV_SERIES = 'tv_series';
+	const TYPE_TV_EPISODE= 'tv_episode';
+	const TYPE_TV_MOVIE = 'tv_movie';
+	const TYPE_TV_SPECIAL = 'tv_special';
+	const TYPE_MINI_SERIES = 'mini_series';
+	const TYPE_DOCUMENTARY = 'documentary';
+	const TYPE_GAME = 'game';
+	const TYPE_SHORT_FILM = 'short';
+	const TYPE_VIDEO = 'video';
+	const TYPE_UNKNOWN = 'unknown';
 
 	protected $_timeout = 4;
 
-	public function search($title, $type = self::MOVIE){
+	/**
+	 * @param string $title
+	 * @return array
+	 */
+	public function searchMovie($title){
+		return $this->search($title, self::TYPE_MOVIE);
+	}
+
+	/**
+	 * @param string $title
+	 * @return array
+	 */
+	public function searchSeries($title){
+		return $this->search($title, self::TYPE_TV_SERIES);
+	}
+
+	/**
+	 * @param $title
+	 * @param $type
+	 * @return array
+	 */
+	public function search($title, $type){
 		$url = 'http://akas.imdb.com/search/title/?' . http_build_query([
 			'title' => $title,
 			'title_type' => $type,

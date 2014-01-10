@@ -1,14 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: florian
- * Date: 09/01/14
- * Time: 16:14
- */
-
 namespace IMDb;
-
-use \IMDb\Title;
 
 class Actor extends Person {
 
