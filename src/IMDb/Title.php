@@ -61,6 +61,11 @@ class Title implements \JsonSerializable {
 	protected $_cast;
 
 	/**
+	 * @var \DateTime
+	 */
+	protected $_datePublished;
+
+	/**
 	 * @param array $cast
 	 */
 	public function setCast($cast)
@@ -92,9 +97,21 @@ class Title implements \JsonSerializable {
 		return $this->_directors;
 	}
 
+	/**
+	 * @param \DateTime $datePublished
+	 */
+	public function setDatePublished($datePublished)
+	{
+		$this->_datePublished = $datePublished;
+	}
 
-
-
+	/**
+	 * @return \DateTime
+	 */
+	public function getDatePublished()
+	{
+		return $this->_datePublished;
+	}
 
 	/**
 	 * @param string $posterUri
