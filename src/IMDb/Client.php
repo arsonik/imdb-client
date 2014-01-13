@@ -17,7 +17,7 @@ class Client {
 	const TYPE_VIDEO = 'video';
 	const TYPE_UNKNOWN = 'unknown';
 
-	protected $_timeout = 4;
+	protected $_timeout = 5;
 
 	protected $_cacheResults;
 
@@ -137,13 +137,13 @@ class Client {
 			$errno = curl_errno($ch);
 			$error = curl_error($ch);
 
-			throw new Exception('['.$errno.'] ' . $error);
+			throw new \Exception('['.$errno.'] ' . $error);
 		}
 		elseif($this->_cacheResults)
 			file_put_contents($cacheFile, '<?php return ' . var_export($result, true) . ';');
 		curl_close($ch);
 		if(!$result)
-			throw new Exception('Invalid return curl_getinfo = ' . var_export(curl_getinfo($ch), true));
+			throw new \Exception('Invalid return curl_getinfo = ' . var_export(curl_getinfo($ch), true));
 
 		return $result;
 	}
