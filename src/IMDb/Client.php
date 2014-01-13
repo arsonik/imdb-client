@@ -114,7 +114,7 @@ class Client {
 	 * @param string $path
 	 * @param int $attempt
 	 * @return mixed
-	 * @throws Exception
+	 * @throws \Exception
 	 */
 	protected function _getContent($uri, $attempt = 1)
 	{

@@ -1,6 +1,6 @@
 {
 	"name": "arsonik/imdb-client",
-	"description": "IMDb Scrapper.",
+	"description": "IMDb Scrapper. PSR-0",
 	"keywords": [ "imdb", "movie" ],
 	"require": {
 		"electrolinux/phpquery": "dev-master"
