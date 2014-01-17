@@ -6,5 +6,4 @@ use IMDb\Title;
 
 class Movie extends Title
 {
-
 }

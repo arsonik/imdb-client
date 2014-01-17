@@ -294,8 +294,7 @@ abstract class Title implements \JsonSerializable {
 			'synopsis' => $this->_synopsis,
 			'poster' => $this->_posterUri,
 			'genres' => $this->_genres,
-			'cast' => $this->_cast,
-			'directors' => $this->_directors,
+			'people' => $this->_people,
 			'length' => $this->_length->format('%i'),
 		];
 	}

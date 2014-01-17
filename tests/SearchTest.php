@@ -33,6 +33,7 @@ class SearchTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($movie->getId(), 'tt0133093', 'Found movie doesnt match exepected id');
 		$this->assertEquals($movie->getTitle(), 'The Matrix', 'Found movie doesnt match exepected title');
 		$this->assertEquals($movie->getDatePublished()->format('Y-m-d'), '1999-03-31', 'Found movie doesnt match exepected publised date');
+        $this->assertNotEmpty(json_encode($movie));
 	}
 
     public function testSearchEpisode(){

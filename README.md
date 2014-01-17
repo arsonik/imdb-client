@@ -22,4 +22,4 @@ var_dump($movie);
 echo json_encode($movie);
 ```
 
-See /tests/ directory for more examples
+See ./tests/ directory for more examples
