@@ -1,15 +1,7 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: florian
- * Date: 09/01/14
- * Time: 15:29
- */
-
 namespace IMDb;
 
-
-class Title implements \JsonSerializable {
+abstract class Title implements \JsonSerializable {
 	/**
 	 * @var string
 	 */
@@ -53,12 +45,8 @@ class Title implements \JsonSerializable {
 	/**
 	 * @var array
 	 */
-	protected $_directors;
+	protected $_people = [];
 
-	/**
-	 * @var array
-	 */
-	protected $_cast;
 
 	/**
 	 * @var \DateTime
@@ -66,11 +54,26 @@ class Title implements \JsonSerializable {
 	protected $_datePublished;
 
 	/**
-	 * @param array $cast
+	 * @var integer
 	 */
-	public function setCast($cast)
+	protected $_myRating;
+
+	public $ratingLinks = [];
+
+	/**
+	 * @param int $myRating
+	 */
+	public function setMyRating($myRating)
 	{
-		$this->_cast = $cast;
+		$this->_myRating = $myRating;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getMyRating()
+	{
+		return $this->_myRating;
 	}
 
 	/**
@@ -78,15 +81,7 @@ class Title implements \JsonSerializable {
 	 */
 	public function getCast()
 	{
-		return $this->_cast;
-	}
-
-	/**
-	 * @param array $directors
-	 */
-	public function setDirectors($directors)
-	{
-		$this->_directors = $directors;
+		return $this->_people['actors'];
 	}
 
 	/**
@@ -94,7 +89,7 @@ class Title implements \JsonSerializable {
 	 */
 	public function getDirectors()
 	{
-		return $this->_directors;
+        return $this->_people['director'];
 	}
 
 	/**
@@ -164,11 +159,6 @@ class Title implements \JsonSerializable {
 	{
 		return $this->_rating;
 	}
-
-
-
-
-
 
 	/**
 	 * @param string $id
@@ -249,6 +239,47 @@ class Title implements \JsonSerializable {
 	{
 		return $this->_votes;
 	}
+
+
+    public function assignPageContent(\phpQueryObject $_){
+        $this->setSynopsis(trim($_['meta[property=og:description]']->attr('content')));
+        $this->setLength(new \DateInterval($_['[itemprop=duration]']->attr('datetime')));
+        $this->setRating((float) $_['[itemprop=ratingValue]']->text());
+        $this->setTitle(trim($_['h1 [itemprop=name]']->text()));
+        $this->setVotes((int) preg_replace('/[^\d]+/', '', $_['[itemprop=ratingCount]']->text()));
+        $this->setPosterUri($_['img[itemprop=image]']->attr('src'));
+        $this->setDatePublished(\DateTime::createFromFormat('Y-m-d', $_['.infobar [itemprop="datePublished"]']->attr('content')));
+
+        $g = [];
+        foreach($_['.infobar [itemprop=genre]'] as $genre)
+            $g[] = pq($genre)->text();
+        $this->setGenres($g);
+
+        foreach($_['#title-overview-widget [itemtype="http://schema.org/Person"][itemprop!=actors]'] as $x){
+            $x = pq($x);
+            foreach($x['a[itemprop=url]'] as $p){
+                $p = pq($p);
+                $person = new Person();
+                $person->setId(preg_replace('@^.*(nm\d+).*@', '$1', $p->attr('href')));
+                $person->setName($p->text());
+                if(!isset($this->_people[$x->attr('itemprop')]))
+                    $this->_people[$x->attr('itemprop')] = [];
+                $this->_people[$x->attr('itemprop')][$person->getId()] = $person;
+            }
+        }
+
+        // Casting
+        if(!isset($this->_people['actors']))
+            $this->_people['actors'] = [];
+        foreach($_['table.cast_list tr:has([itemprop=name])'] as $p){
+            $p = pq($p);
+            $actor = new Actor();
+            $actor->setId(preg_replace('@^.*(nm\d+).*@', '$1', $p['[itemprop=url]']->attr('href')));
+            $actor->setName($p['[itemprop=name]']->text());
+            $actor->setCharacter($p['a[href^=/character]']->text());
+            $this->_people['actors'][$actor->getId()] = $actor;
+        }
+    }
 
 	/**
 	 * @return array

@@ -23,8 +23,63 @@ class Client {
 
 	protected $_cacheResults;
 
+	/**
+	 * @var bool
+	 */
+	protected $_connected = false;
+
+	protected $_sessionCookieFilePath = null;
+
 	public function __construct($cacheResults = true){
 		$this->_cacheResults = (bool) $cacheResults;
+	}
+
+	/**
+	 * @param string $id
+	 * @param string $passw
+	 * @return bool
+	 */
+	public function setCredentials($id, $passw){
+		$this->_sessionCookieFilePath = '/tmp/imdbsession-' . uniqid();
+		$uri = 'https://secure.imdb.com/oauth/login?origurl=http://www.imdb.com/?ref_=nv_home&show_imdb_panel=1';
+		$html = $this->_load($uri);
+
+		$_ = \phpQuery::newDocument($html);
+		$post = [];
+		foreach($_['form[method="post"] input[name]'] as $input){
+			$input = pq($input);
+			$post[$input->attr('name')] = $input->val();
+		}
+		$post = array_merge($post, [
+			'login' => $id,
+			'password' => $passw
+		]);
+
+		$result = $this->_load($uri, $post);
+		if(preg_match('/We have logged you in/', $result))
+			$this->_connected = true;
+		else
+			$this->_sessionCookieFilePath = null;
+
+		return $this->_connected;
+	}
+
+	/**
+	 * @param string $titleId
+	 * @param integer $rating
+	 * @return bool
+	 * @throws \Exception
+	 */
+	public function rateTitle($titleId, $rating){
+		if(!$this->_connected)
+			throw new \Exception('Only available when logged');
+		$title = $this->titleWithId($titleId);
+		if(!isset($title->ratingLinks[$rating]))
+			throw new \Exception('Cannot load rating links');
+
+		$html = $this->_load($this->_baseUri . $title->ratingLinks[$rating]);
+		$result = preg_match('/Your vote of '.$rating.' was counted./', $html) > 0;
+		return $result;
 	}
 
 	/**
@@ -43,6 +98,26 @@ class Client {
 		return $this->search($title, self::TYPE_TV_SERIES);
 	}
 
+    /**
+     * Ask google :)
+     * @param string $showTitle
+     * @param integer $seasonNumber
+     * @param integer $episodeNumber
+     * @return bool|Title
+     */
+    public function searchEpisode($showTitle, $seasonNumber, $episodeNumber){
+        $html = $this->_load(
+            'https://google.com/search?' . http_build_query([
+                'q' => 'site:imdb.com "'.$showTitle.'" "tv episode" "season '.$seasonNumber.'" "episode '.$episodeNumber.'"'
+            ]),
+            null,
+            ['mobile' => true]
+        );
+        if(preg_match('_imdb\.com/title/([^/]+)/_', $html, $r))
+            return $this->titleWithId($r[1]);
+        return false;
+    }
+
 	/**
 	 * @param $title
 	 * @param $type
@@ -54,7 +129,7 @@ class Client {
 			'title_type' => $type,
 			'view' => 'simple',
 		]);
-		$html = $this->_getContent($url);
+		$html = $this->_load($url);
 		$_ = \phpQuery::newDocument($html);
 
 		$results = [];
@@ -74,7 +149,7 @@ class Client {
 	 */
 	public function personWithId($id){
 		$result = false;
-		$html = $this->_getContent($this->_baseUri . '/name/'.$id.'/');
+		$html = $this->_load($this->_baseUri . '/name/'.$id.'/');
 		if($html){
 			$_ = \phpQuery::newDocument($html);
 			$person = new Person();
@@ -95,44 +170,38 @@ class Client {
 	 * @return Title
 	 */
 	public function titleWithId($id){
-		$result = false;
-		$html = $this->_getContent($this->_baseUri . '/title/'.$id.'/');
+		$html = $this->_load($this->_baseUri . '/title/'.$id.'/');
 		if($html){
 			$_ = \phpQuery::newDocument($html);
-			$title = new Title();
+
+			// Load class with title type
+			$type = $_['meta[property=og:type]']->attr('content');
+			$className = preg_replace_callback('/_([a-z])/', function($matches){
+				return strtoupper($matches['1']);
+			}, $type);
+			$className = preg_replace_callback('/\.([a-z])/', function($matches){
+				return '\\' . strtoupper($matches['1']);
+			}, $className);
+
+			$className = __NAMESPACE__ . '\\' . 'Title\\' . ucfirst($className);
+            /** @var $title Title */
+			$title = new $className();
 			$title->setId($id);
-			$title->setSynopsis(trim($_['p[itemprop=description]']->text()));
-			$title->setLength(new \DateInterval($_['[itemprop=duration]']->attr('datetime')));
-			$title->setRating((float) $_['[itemprop=ratingValue]']->text());
-			$title->setTitle(trim($_['h1 [itemprop=name]']->text()));
-			$title->setVotes((int) preg_replace('/[^\d]+/', '', $_['[itemprop=ratingCount]']->text()));
-			$title->setPosterUri($_['img[itemprop=image]']->attr('src'));
-			$title->setDatePublished(\DateTime::createFromFormat('Y-m-d', $_['.infobar [itemprop="datePublished"]']->attr('content')));
-			$g = [];
-			foreach($_['.infobar [itemprop=genre]'] as $genre)
-				$g[] = pq($genre)->text();
-			$title->setGenres($g);
-			// Directors
-			$c = [];
-			foreach($_['div[itemprop=director] a[itemprop=url]'] as $p){
-				$p = pq($p);
-				$actor = new Person();
-				$actor->setId(preg_replace('@^.*(nm\d+).*@', '$1', $p->attr('href')));
-				$actor->setName($p->text());
-				$c[] = $actor;
-			}
-			$title->setDirectors($c);
-			// Casting
-			$c = [];
-			foreach($_['table.cast_list tr:has([itemprop=name])'] as $p){
-				$p = pq($p);
-				$actor = new Actor();
-				$actor->setId(preg_replace('@^.*(nm\d+).*@', '$1', $p['[itemprop=url]']->attr('href')));
-				$actor->setName($p['[itemprop=name]']->text());
-				$actor->setCharacter($p['a[href^=/character]']->text());
-				$c[] = $actor;
-			}
-			$title->setCast($c);
+            $title->assignPageContent($_);
+
+            if($this->_connected){
+                $rating = null;
+                $ratesLinks = [];
+                foreach($_['a[title^="Click to rate"][href^="/title/'.$id.'"]'] as $a){
+                    $a = pq($a);
+                    $rate = (int) $a->text();
+                    $ratesLinks[$rate] = $a->attr('href');
+                    if($a->hasClass('rating-your'))
+                        $rating = $rate;
+                }
+                $title->ratingLinks = $ratesLinks;
+                $title->setMyRating($rating);
+            }
 
 			$result = $title;
 		}
@@ -141,25 +210,38 @@ class Client {
 
 	/**
 	 * @param string $path
-	 * @param int $attempt
 	 * @return mixed html string if success, bool otherwise
 	 * @throws \Exception
 	 */
-	protected function _getContent($uri, $attempt = 1)
+	protected function _load($uri, $postField = null, $params = [])
 	{
+        $ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11';
+        if(isset($params['mobile']) && $params['mobile'] === true)
+            $ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_1_3 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10B329 Safari/8536.25';
 		$options = [
 			CURLOPT_URL => $uri,
 			CURLOPT_CONNECTTIMEOUT => $this->_timeout,
 			CURLOPT_TIMEOUT => $this->_timeout,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_USERAGENT => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11',
+			CURLOPT_USERAGENT => $ua,
 			CURLOPT_HTTPHEADER => [
 				'Accept-Language: en-us',
 			]
 		];
-		if($this->_cacheResults){
-			$cacheFile = '/tmp/'.__METHOD__.'-'.md5(serialize($uri));
+		if($this->_sessionCookieFilePath)
+			$options += [
+				CURLOPT_COOKIEFILE => $this->_sessionCookieFilePath,
+				CURLOPT_COOKIEJAR => $this->_sessionCookieFilePath,
+			];
+		if(is_array($postField))
+			$options += [
+				CURLOPT_POST => true,
+				CURLOPT_POSTFIELDS => http_build_query($postField)
+			];
+
+		if($this->_cacheResults && !is_array($postField)){
+			$cacheFile = '/tmp/'.__METHOD__.'-'.md5(serialize($options));
 			if(is_file($cacheFile))
 				return include $cacheFile;
 		}
@@ -175,7 +257,7 @@ class Client {
 		elseif($info['http_code'] >= 400 && $info['http_code'] <= 599){
 			return false;
 		}
-		elseif($this->_cacheResults)
+		elseif(isset($cacheFile))
 			file_put_contents($cacheFile, '<?php return ' . var_export($result, true) . ';');
 
 		return $result;

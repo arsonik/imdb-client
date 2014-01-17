@@ -1,8 +1,7 @@
-IMDb-client [![Build Status](https://travis-ci.org/arsonik/imdb-client.png?branch=master)](https://travis-ci.org/arsonik/imdb-client)
+imdb-client [![Build Status](https://travis-ci.org/arsonik/imdb-client.png?branch=master)](https://travis-ci.org/arsonik/imdb-client)
 ===========
 
 IMDb PHP Scrapper, psr-0
-
 
 Usage
 =====
@@ -22,3 +21,5 @@ $movie = $s->titleWithId($m['id']);
 var_dump($movie);
 echo json_encode($movie);
 ```
+
+See /tests/ directory for more examples
