@@ -242,7 +242,7 @@ abstract class Title implements \JsonSerializable {
 
 
     public function assignPageContent(\phpQueryObject $_){
-        $this->setSynopsis(trim($_['meta[property=og:description]']->attr('content')));
+        $this->setSynopsis(trim($_['p[itemprop=description]']->text()));
         $this->setLength(new \DateInterval($_['[itemprop=duration]']->attr('datetime')));
         $this->setRating((float) $_['[itemprop=ratingValue]']->text());
         $this->setTitle(trim($_['h1 [itemprop=name]']->text()));
