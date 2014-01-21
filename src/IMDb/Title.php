@@ -296,7 +296,8 @@ abstract class Title implements \JsonSerializable {
 			'poster' => $this->_posterUri,
 			'genres' => $this->_genres,
 			'people' => $this->_people,
-			'length' => $this->_length->format('%i'),
+            'length' => $this->_length instanceof \DateInterval ? $this->_length->format('%i') : null,
+            'published' => $this->_datePublished instanceof \DateTime ? $this->_datePublished->format('Y-m-d') : null,
 		];
 	}
 }
