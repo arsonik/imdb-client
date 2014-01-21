@@ -40,6 +40,10 @@ class SearchTest extends PHPUnit_Framework_TestCase {
         /** @var $movie IMDb\Title\Video\Episode */
         $ep = $this->_imdbClient->searchEpisode('the big bang theory', 3, 6);
         $this->assertEquals($ep->getTitle(), 'The Cornhusker Vortex');
+
+        // as of Jan 21st 2014, no duration for this episode
+        $ep = $this->_imdbClient->searchEpisode('the following', 2, 1);
+        $this->assertEquals($ep->getTitle(), 'Resurrection');
     }
 
 	public function testSearchSeries(){

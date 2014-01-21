@@ -209,15 +209,16 @@ class Client {
 	}
 
 	/**
-	 * @param string $path
+     * @param string $path
+     * @param array $path
 	 * @return mixed html string if success, bool otherwise
 	 * @throws \Exception
 	 */
-	protected function _load($uri, $postField = null, $params = [])
+	protected function _load($uri, $postFields = null, $params = [])
 	{
         $ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11';
         if(isset($params['mobile']) && $params['mobile'] === true)
-            $ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_1_3 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10B329 Safari/8536.25';
+            $ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 7_1_3 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10B329 Safari/8536.25';
 		$options = [
 			CURLOPT_URL => $uri,
 			CURLOPT_CONNECTTIMEOUT => $this->_timeout,
@@ -234,29 +235,32 @@ class Client {
 				CURLOPT_COOKIEFILE => $this->_sessionCookieFilePath,
 				CURLOPT_COOKIEJAR => $this->_sessionCookieFilePath,
 			];
-		if(is_array($postField))
+        // If Post
+		if(is_array($postFields))
 			$options += [
 				CURLOPT_POST => true,
-				CURLOPT_POSTFIELDS => http_build_query($postField)
+				CURLOPT_POSTFIELDS => http_build_query($postFields)
 			];
-
-		if($this->_cacheResults && !is_array($postField)){
+        // If Cache
+        elseif($this->_cacheResults){
 			$cacheFile = '/tmp/'.__METHOD__.'-'.md5(serialize($options));
 			if(is_file($cacheFile))
 				return include $cacheFile;
 		}
+
+        // Let's Scrap it
 		$ch = curl_init();
 		curl_setopt_array($ch, $options);
 		$result = curl_exec($ch);
 		$info = curl_getinfo($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
 		curl_close($ch);
 
-		if($result === false){
-			throw new \Exception('['.curl_errno($ch).'] ' . curl_error($ch));
-		}
-		elseif($info['http_code'] >= 400 && $info['http_code'] <= 599){
+		if($result === false)
+			throw new \Exception('['.$errno.'] ' . $error);
+		elseif($info['http_code'] >= 400 && $info['http_code'] <= 599)
 			return false;
-		}
 		elseif(isset($cacheFile))
 			file_put_contents($cacheFile, '<?php return ' . var_export($result, true) . ';');
 
