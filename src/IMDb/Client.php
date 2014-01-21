@@ -1,8 +1,6 @@
 <?php
 namespace IMDb;
 
-use IMDb\Title;
-
 class Client {
 
 	const TYPE_MOVIE = 'feature';
@@ -19,7 +17,7 @@ class Client {
 
 	protected $_baseUri = 'http://akas.imdb.com';
 
-	protected $_timeout = 6;
+	protected $_timeout = 10;
 
 	protected $_cacheResults;
 
@@ -214,11 +212,14 @@ class Client {
 	 * @return mixed html string if success, bool otherwise
 	 * @throws \Exception
 	 */
-	protected function _load($uri, $postFields = null, $params = [])
+	protected function _load($uri, $postFields = null, $params = [], $attempt = 1)
 	{
-        $ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11';
+        // if mobile user agent
         if(isset($params['mobile']) && $params['mobile'] === true)
             $ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 7_1_3 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10B329 Safari/8536.25';
+        else
+            $ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_1) AppleWebKit/537.73.11 (KHTML, like Gecko) Version/7.0.1 Safari/537.73.11';
+
 		$options = [
 			CURLOPT_URL => $uri,
 			CURLOPT_CONNECTTIMEOUT => $this->_timeout,
@@ -257,8 +258,13 @@ class Client {
         $error = curl_error($ch);
 		curl_close($ch);
 
-		if($result === false)
-			throw new \Exception('Curl Error ['.$errno.'] - ' . $error, $errno);
+		if($result === false){
+            switch($errno){
+                case CURLE_OPERATION_TIMEOUTED:
+                default:
+                    throw new \Exception('Curl Error ['.$errno.'] - ' . $error, $errno);
+            }
+        }
 		elseif($info['http_code'] >= 400 && $info['http_code'] <= 599)
 			return false;
 		elseif(isset($cacheFile))
@@ -266,4 +272,4 @@ class Client {
 
 		return $result;
 	}
-} 
+}
