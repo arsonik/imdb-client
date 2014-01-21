@@ -19,7 +19,7 @@ class Client {
 
 	protected $_baseUri = 'http://akas.imdb.com';
 
-	protected $_timeout = 5;
+	protected $_timeout = 6;
 
 	protected $_cacheResults;
 
@@ -258,7 +258,7 @@ class Client {
 		curl_close($ch);
 
 		if($result === false)
-			throw new \Exception('['.$errno.'] ' . $error);
+			throw new \Exception('Curl Error ['.$errno.'] - ' . $error, $errno);
 		elseif($info['http_code'] >= 400 && $info['http_code'] <= 599)
 			return false;
 		elseif(isset($cacheFile))
