@@ -82,17 +82,19 @@ class Client {
 
 	/**
 	 * @param string $title
+     * @param integer $year
 	 * @return array
 	 */
-	public function searchMovie($title){
-		return $this->search($title, self::TYPE_MOVIE);
+	public function searchMovie($title, $year = null){
+		return $this->search($title, self::TYPE_MOVIE, $year);
 	}
 
 	/**
 	 * @param string $title
+     * @param integer $year
 	 * @return array
 	 */
-	public function searchSeries($title){
+	public function searchSeries($title, $year = null, $year){
 		return $this->search($title, self::TYPE_TV_SERIES);
 	}
 
@@ -117,16 +119,22 @@ class Client {
     }
 
 	/**
-	 * @param $title
-	 * @param $type
+	 * @param string $title
+     * @param string $type
+     * @param integer $year
 	 * @return array
 	 */
-	public function search($title, $type){
-		$url = $this->_baseUri . '/search/title/?' . http_build_query([
-			'title' => $title,
-			'title_type' => $type,
-			'view' => 'simple',
-		]);
+	public function search($title, $type, $year = null){
+        $req = [
+            'title' => $title,
+            'title_type' => $type,
+            'view' => 'simple',
+        ];
+        if(is_numeric($year))
+            $req['release_date'] = $year . '-01-01,' . $year . '-12-31';
+
+        $url = $this->_baseUri . '/search/title/?' . http_build_query($req);
+
 		$html = $this->_load($url);
 		$_ = \phpQuery::newDocument($html);
 
@@ -168,6 +176,7 @@ class Client {
 	 * @return Title
 	 */
 	public function titleWithId($id){
+        $result = null;
 		$html = $this->_load($this->_baseUri . '/title/'.$id.'/');
 		if($html){
 			$_ = \phpQuery::newDocument($html);
