@@ -94,7 +94,7 @@ class Client {
      * @param integer $year
 	 * @return array
 	 */
-	public function searchSeries($title, $year = null, $year){
+	public function searchSeries($title, $year = null){
 		return $this->search($title, self::TYPE_TV_SERIES);
 	}
 
