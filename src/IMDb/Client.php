@@ -108,7 +108,9 @@ class Client {
     public function searchEpisode($showTitle, $seasonNumber, $episodeNumber){
         $html = $this->_load(
             'https://google.com/search?' . http_build_query([
-                'q' => 'site:imdb.com "'.$showTitle.'" "tv episode" "season '.$seasonNumber.'" "episode '.$episodeNumber.'"'
+                'q' => 'site:imdb.com '.
+                    'intitle:"'.$showTitle.'" '.
+                    'intitle:"tv episode" "season '.$seasonNumber.'" "episode '.$episodeNumber.'"'
             ]),
             null,
             ['mobile' => true]
