@@ -1,6 +1,8 @@
 <?php
 namespace IMDb;
 
+use \Exception;
+
 class Client {
 
 	const TYPE_MOVIE = 'feature';
@@ -17,20 +19,75 @@ class Client {
 
 	protected $_baseUri = 'http://akas.imdb.com';
 
-	protected $_timeout = 10;
+    /**
+     * Google Custom Search API Configuration
+     * Use to search episode in a season
+     * @var array
+     */
+    protected $_googleCustomSearchConfig= [
+        'apiKey' => null,
+        'searchEngineId' => null,
+    ];
 
-	protected $_cacheResults;
+    /**
+     * Curl timeout
+     * @var int
+     */
+    protected $_timeout = 10;
+
+    /**
+     * Tell if we should cache or not
+     * @var bool
+     */
+    protected $_cache;
 
 	/**
 	 * @var bool
 	 */
 	protected $_connected = false;
 
-	protected $_sessionCookieFilePath = null;
+    /**
+     * @var string
+     */
+    protected $_sessionCookieFilePath = null;
 
-	public function __construct($cacheResults = true){
-		$this->_cacheResults = (bool) $cacheResults;
-	}
+	protected function __construct(){}
+
+    /**
+     * Used to instantiate client
+     * @see /config.sample.php
+     * @param array $config
+     * @return Client
+     */
+    public static function iniWithConfig(array $config){
+        $i = new self();
+        $i->setCache($config['cache']);
+        $i->setGoogleCustomSearchConfig($config['googleCustomSearch']['apiKey'], $config['googleCustomSearch']['engineId']);
+        return $i;
+    }
+
+    /**
+     * @param mixed $value
+     */
+    public function setCache($value){
+        $this->_cache = $value;
+    }
+
+    /**
+     * @param $apiKey
+     * @param $searchEngineId
+     */
+    public function setGoogleCustomSearchConfig($apiKey, $searchEngineId){
+        $this->_googleCustomSearchConfig['apiKey'] = $apiKey;
+        $this->_googleCustomSearchConfig['searchEngineId'] = $searchEngineId;
+    }
+
+    /**
+     * @return array
+     */
+    public function getGoogleCustomSearchConfig(){
+        return $this->_googleCustomSearchConfig;
+    }
 
 	/**
 	 * @param string $id
@@ -106,18 +163,30 @@ class Client {
      * @return bool|Title
      */
     public function searchEpisode($showTitle, $seasonNumber, $episodeNumber){
-        $html = $this->_load(
-            'https://google.com/search?' . http_build_query([
-                'q' => 'site:imdb.com '.
+        if($this->_googleCustomSearchConfig['apiKey'] && $this->_googleCustomSearchConfig['searchEngineId']){
+            $url = 'https://www.googleapis.com/customsearch/v1?' . http_build_query([
+                'q' =>
+                    'site:imdb.com '.
                     'intitle:"'.$showTitle.'" '.
-                    'intitle:"tv episode" "season '.$seasonNumber.'" "episode '.$episodeNumber.'"'
-            ]),
-            null,
-            ['mobile' => true]
-        );
-        if(preg_match('_imdb\.com/title/([^/]+)/_', $html, $r))
-            return $this->titleWithId($r[1]);
-        return false;
+                    'intitle:"tv episode" "season '.$seasonNumber.'" "episode '.$episodeNumber.'"',
+                'key' => $this->_googleCustomSearchConfig['apiKey'],
+                'cx' => $this->_googleCustomSearchConfig['searchEngineId']
+            ]);
+
+            $response = $this->_load($url);
+            $result = json_decode($response, true);
+            foreach($result['items'] as $result){
+                if(preg_match('_imdb\.com/title/([^/]+)/_', $result['link'], $r))
+                    return $this->titleWithId($r[1]);
+                print_r($result);
+            }
+            /*
+            */
+            return false;
+        }
+        else
+            throw new \Exception('Need to use google custom search');
+
     }
 
 	/**
@@ -254,7 +323,7 @@ class Client {
 				CURLOPT_POSTFIELDS => http_build_query($postFields)
 			];
         // If Cache
-        elseif($this->_cacheResults){
+        elseif($this->_cache === 'file'){
 			$cacheFile = '/tmp/'.__METHOD__.'-'.md5(serialize($options));
 			if(is_file($cacheFile))
 				return include $cacheFile;
@@ -276,8 +345,10 @@ class Client {
                     throw new \Exception('Curl Error ['.$errno.'] - ' . $error, $errno);
             }
         }
-		elseif($info['http_code'] >= 400 && $info['http_code'] <= 599)
+		elseif($info['http_code'] >= 400 && $info['http_code'] <= 599){
+            print_r($info);
 			return false;
+        }
 		elseif(isset($cacheFile))
 			file_put_contents($cacheFile, '<?php return ' . var_export($result, true) . ';');
 

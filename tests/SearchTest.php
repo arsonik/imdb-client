@@ -7,7 +7,7 @@ class SearchTest extends PHPUnit_Framework_TestCase {
 
 	public function __construct()
 	{
-		$this->_imdbClient = new IMDb\Client();
+		$this->_imdbClient = IMDb\Client::iniWithConfig(include __DIR__ . '/../config.php');
 	}
 
 	public function testCredentials(){
@@ -37,13 +37,15 @@ class SearchTest extends PHPUnit_Framework_TestCase {
 	}
 
     public function testSearchEpisode(){
-        /** @var $movie IMDb\Title\Video\Episode */
-        $ep = $this->_imdbClient->searchEpisode('the big bang theory', 3, 6);
-        $this->assertEquals($ep->getTitle(), 'The Cornhusker Vortex');
+        if(isset($this->_imdbClient->getGoogleCustomSearchConfig()['apiKey'])){
+            /** @var $movie IMDb\Title\Video\Episode */
+            $ep = $this->_imdbClient->searchEpisode('the big bang theory', 3, 6);
+            $this->assertEquals($ep->getTitle(), 'The Cornhusker Vortex');
 
-        // as of Jan 21st 2014, no duration for this episode
-        $ep = $this->_imdbClient->searchEpisode('the following', 2, 1);
-        $this->assertEquals($ep->getTitle(), 'Resurrection');
+            // as of Jan 21st 2014, no duration for this episode
+            $ep = $this->_imdbClient->searchEpisode('the following', 2, 1);
+            $this->assertEquals($ep->getTitle(), 'Resurrection');
+        }
     }
 
 	public function testSearchSeries(){
