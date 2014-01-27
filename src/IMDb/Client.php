@@ -174,14 +174,13 @@ class Client {
             ]);
 
             $response = $this->_load($url);
-            $result = json_decode($response, true);
-            foreach($result['items'] as $result){
-                if(preg_match('_imdb\.com/title/([^/]+)/_', $result['link'], $r))
-                    return $this->titleWithId($r[1]);
-                print_r($result);
+            $json = json_decode($response, true);
+            if(is_array($json) && isset($json['items'])){
+                foreach($json['items'] as $result){
+                    if(preg_match('_imdb\.com/title/([^/]+)/_', $result['link'], $r))
+                        return $this->titleWithId($r[1]);
+                }
             }
-            /*
-            */
             return false;
         }
         else

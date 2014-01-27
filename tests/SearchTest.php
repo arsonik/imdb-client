@@ -39,6 +39,7 @@ class SearchTest extends PHPUnit_Framework_TestCase {
     public function testSearchEpisode(){
         if(isset($this->_imdbClient->getGoogleCustomSearchConfig()['apiKey'])){
             /** @var $movie IMDb\Title\Video\Episode */
+
             $ep = $this->_imdbClient->searchEpisode('the big bang theory', 3, 6);
             $this->assertEquals($ep->getTitle(), 'The Cornhusker Vortex');
 
