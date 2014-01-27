@@ -7,7 +7,7 @@ Usage
 =====
 ```php
 <?php
-$s = new IMDb\Client();
+$s = IMDb\Client::iniWithConfig(include __DIR__ . '/config.sample.php');;
 
 $results = $s->searchMovie('Matrix');
 $m = current($results);
