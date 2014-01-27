@@ -7,7 +7,7 @@ class SearchTest extends PHPUnit_Framework_TestCase {
 
 	public function __construct()
 	{
-		$this->_imdbClient = IMDb\Client::iniWithConfig(include __DIR__ . '/../config.php');
+		$this->_imdbClient = IMDb\Client::iniWithConfig(include __DIR__ . '/../config.sample.php');
 	}
 
 	public function testCredentials(){

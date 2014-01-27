@@ -10,7 +10,7 @@ return [
         'id' => 'user@domain.com',
         'passw' => 'passw',
     ],
-
-    // for unit test
+    // rewrite to null for unit test (no account)
     'googleCustomSearch' => null,
+    'imdbCredentials' => null,
 ];
